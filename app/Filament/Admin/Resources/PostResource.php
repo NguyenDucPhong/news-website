@@ -67,8 +67,14 @@ class PostResource extends Resource implements HasShieldPermissions
                     ->default(0),
                 Forms\Components\DateTimePicker::make('published_at'),
                 Forms\Components\Select::make('category_id')
+                    ->label('Danh mục')
                     ->relationship('category', 'name')
                     ->required(),
+                Forms\Components\CheckboxList::make('tags')
+                    ->label('Tags')
+                    ->relationship('tags', 'name')
+                    ->columns(3)
+                    ->bulkToggleable(),
             ]);
     }
 
@@ -83,17 +89,10 @@ class PostResource extends Resource implements HasShieldPermissions
                     ->searchable(),
                 Tables\Columns\TextColumn::make('slug')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('status')
-                    ->sortable()
-                    ->formatStateUsing(fn ($state) => match ($state) {
-                        0 => 'Pending',
-                        1 => 'Approved',
-                        2 => 'Archived',
-                        default => 'Unknown',
-                    }),
                 Tables\Columns\TextColumn::make('published_at')
                     ->dateTime()
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('category.name')
                     ->numeric()
                     ->sortable(),
@@ -109,12 +108,34 @@ class PostResource extends Resource implements HasShieldPermissions
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\BadgeColumn::make('status')
+                    ->label('Trạng thái')
+                    ->sortable()
+                    ->colors([
+                        'warning' => fn ($state) => $state === 0,
+                        'success' => fn ($state) => $state === 1,
+                        'gray'    => fn ($state) => $state === 2,
+                        'secondary' => fn ($state) => ! in_array($state, [0, 1, 2]),
+                    ])
+                    ->icons([
+                        'heroicon-o-clock' => fn ($state) => $state === 0,
+                        'heroicon-o-check-circle' => fn ($state) => $state === 1,
+                        'heroicon-o-archive-box' => fn ($state) => $state === 2,
+                        'heroicon-o-question-mark-circle' => fn ($state) => ! in_array($state, [0, 1, 2]),
+                    ])
+                    ->formatStateUsing(fn ($state) => match ($state) {
+                        0 => 'Pending',
+                        1 => 'Approved',
+                        2 => 'Archived',
+                        default => 'Unknown',
+                    }),
             ])
             ->filters([
                 //
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([

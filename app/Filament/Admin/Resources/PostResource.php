@@ -6,6 +6,7 @@ use App\Filament\Admin\Resources\PostResource\Pages;
 use App\Filament\Admin\Resources\PostResource\RelationManagers;
 use App\Models\Post;
 use BezhanSalleh\FilamentShield\Contracts\HasShieldPermissions;
+use Filament\Facades\Filament;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -55,8 +56,10 @@ class PostResource extends Resource implements HasShieldPermissions
                 Forms\Components\MarkdownEditor::make('content')
                     ->required()
                     ->columnSpanFull(),
-                Forms\Components\FileUpload::make('featured_image_url')
-                    ->image(),
+                Forms\Components\Select::make('category_id')
+                    ->label('Danh mục')
+                    ->relationship('category', 'name')
+                    ->required(),
                 Forms\Components\Select::make('status')
                     ->required()
                     ->options([
@@ -64,17 +67,16 @@ class PostResource extends Resource implements HasShieldPermissions
                         1 => 'Approved',
                         2 => 'Archived',
                     ])
-                    ->default(0),
-                Forms\Components\DateTimePicker::make('published_at'),
-                Forms\Components\Select::make('category_id')
-                    ->label('Danh mục')
-                    ->relationship('category', 'name')
-                    ->required(),
-                Forms\Components\CheckboxList::make('tags')
+                    ->default(0)
+                    ->visible(fn () => Filament::auth()->user()?->hasAnyRole(['admin', 'super_admin'])),
+                Forms\Components\Select::make('tags')
                     ->label('Tags')
                     ->relationship('tags', 'name')
-                    ->columns(3)
-                    ->bulkToggleable(),
+                    ->multiple()
+                    ->searchable()
+                    ->preload(),
+                Forms\Components\FileUpload::make('featured_image_url')
+                    ->image(),
             ]);
     }
 
@@ -89,10 +91,6 @@ class PostResource extends Resource implements HasShieldPermissions
                     ->searchable(),
                 Tables\Columns\TextColumn::make('slug')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('published_at')
-                    ->dateTime()
-                    ->sortable()
-                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('category.name')
                     ->numeric()
                     ->sortable(),

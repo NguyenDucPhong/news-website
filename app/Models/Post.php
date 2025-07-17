@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\PostStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -37,4 +38,8 @@ class Post extends Model
     public  function comments(): HasMany{
         return $this->hasMany(Comment::class);
     }
+
+    protected $casts = [
+        'status' => PostStatus::class,
+    ];
 }
